@@ -4,628 +4,455 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>大学物理实验数据处理助手</title>
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-  :root {
-    --primary: #1a73e8;
-    --primary-dark: #1557b0;
-    --bg: #f0f4ff;
-    --card: #ffffff;
-    --text: #222;
-    --muted: #666;
-    --border: #dde3f0;
-    --success: #1a8a4a;
-    --success-bg: #e8f5ee;
-    --accent: #e8f0fe;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; background: var(--bg); color: var(--text); }
-
-  /* NAV */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    background: var(--primary); color: #fff;
-    padding: 0 16px;
-    display: flex; align-items: center; gap: 4px;
-    flex-wrap: wrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  }
-  nav .brand { font-size: 1.1rem; font-weight: 700; padding: 14px 8px 14px 0; margin-right: 8px; white-space: nowrap; }
-  nav a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 0.82rem; padding: 6px 8px; border-radius: 4px; white-space: nowrap; }
-  nav a:hover { background: rgba(255,255,255,0.2); color: #fff; }
-
-  /* LAYOUT */
-  .container { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
-  .hero { text-align: center; padding: 32px 0 24px; }
-  .hero h1 { font-size: 1.8rem; color: var(--primary); }
-  .hero p { color: var(--muted); margin-top: 8px; }
-
-  /* CARD */
-  .card {
-    background: var(--card); border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(26,115,232,0.08);
-    padding: 24px; margin-bottom: 24px;
-    border: 1px solid var(--border);
-  }
-  .card h2 { font-size: 1.15rem; color: var(--primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-  .card .subtitle { font-size: 0.85rem; color: var(--muted); margin-bottom: 16px; }
-  .formula-box {
-    background: var(--accent); border-radius: 8px;
-    padding: 10px 16px; margin: 12px 0;
-    font-size: 0.95rem; color: var(--primary-dark);
-  }
-
-  /* INPUTS */
-  textarea, input[type=text], input[type=number], select {
-    width: 100%; padding: 8px 12px; border: 1px solid var(--border);
-    border-radius: 6px; font-size: 0.95rem; font-family: inherit;
-    background: #fafbff; outline: none; transition: border 0.2s;
-  }
-  textarea:focus, input:focus, select:focus { border-color: var(--primary); }
-  textarea { resize: vertical; min-height: 80px; }
-  label { font-size: 0.88rem; color: var(--muted); display: block; margin-bottom: 4px; margin-top: 12px; }
-  button {
-    margin-top: 14px; padding: 9px 24px;
-    background: var(--primary); color: #fff;
-    border: none; border-radius: 6px; cursor: pointer;
-    font-size: 0.95rem; font-weight: 600; transition: background 0.2s;
-  }
-  button:hover { background: var(--primary-dark); }
-  .result {
-    margin-top: 14px; padding: 12px 16px;
-    background: var(--success-bg); border-radius: 8px;
-    color: var(--success); font-size: 0.95rem; line-height: 1.8;
-    display: none;
-  }
-  .result.show { display: block; }
-  .result strong { font-size: 1.05rem; }
-
-  /* TWO COL */
-  .row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .row > div { flex: 1; min-width: 140px; }
-
-  /* TABLE */
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-top: 12px; }
-  th { background: var(--accent); color: var(--primary); padding: 8px 10px; text-align: left; }
-  td { padding: 7px 10px; border-bottom: 1px solid var(--border); }
-  tr:hover td { background: #f5f8ff; }
-  .copy-btn {
-    margin: 0; padding: 2px 8px; font-size: 0.78rem;
-    background: var(--primary); color: #fff;
-    border: none; border-radius: 4px; cursor: pointer;
-  }
-
-  /* TABS */
-  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
-  .tab-btn {
-    padding: 6px 14px; border-radius: 20px;
-    border: 1px solid var(--primary); background: #fff;
-    color: var(--primary); font-size: 0.85rem; cursor: pointer; margin-top: 0;
-  }
-  .tab-btn.active { background: var(--primary); color: #fff; }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
-
-  /* CANVAS */
-  canvas { border: 1px solid var(--border); border-radius: 8px; margin-top: 14px; max-width: 100%; }
-
-  /* FORMULA GRID */
-  .formula-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 12px; }
-  .formula-item { background: var(--accent); border-radius: 8px; padding: 12px 14px; }
-  .formula-item .fname { font-weight: 600; color: var(--primary); font-size: 0.9rem; }
-  .formula-item .fdesc { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
-
-  footer { text-align: center; color: var(--muted); font-size: 0.82rem; padding: 20px; }
+:root{--p:#2563eb;--pl:#eff6ff;--pd:#1d4ed8;--ok:#16a34a;--okb:#f0fdf4;--wb:#fffbeb;--bd:#e2e8f0;--bg:#f8fafc;--cd:#fff;--tx:#1e293b;--mu:#64748b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--tx);font-size:15px}
+nav{background:var(--p);color:#fff;padding:0 16px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.brand{font-size:1rem;font-weight:700;padding:12px 8px 12px 0;white-space:nowrap}
+nav a{color:rgba(255,255,255,.85);text-decoration:none;font-size:.78rem;padding:5px 7px;border-radius:4px;white-space:nowrap}
+nav a:hover{background:rgba(255,255,255,.18);color:#fff}
+.wrap{max-width:840px;margin:0 auto;padding:22px 14px 80px}
+.hero{text-align:center;padding:20px 0 14px}
+.hero h1{font-size:1.55rem;color:var(--p)}
+.hero p{color:var(--mu);margin-top:5px;font-size:.9rem}
+.flowbar{background:var(--pl);border:1px solid #bfdbfe;border-radius:10px;padding:11px 15px;margin-bottom:22px;display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:.8rem;color:var(--pd)}
+.ft{background:var(--p);color:#fff;border-radius:20px;padding:2px 8px;font-size:.76rem;white-space:nowrap}
+.fa{color:var(--p);font-weight:bold}
+.sec{margin-bottom:22px}
+.sh{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.sn{background:var(--p);color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;flex-shrink:0}
+.sh h2{font-size:1rem}
+.sh .sub{font-size:.78rem;color:var(--mu);margin-left:2px}
+.card{background:var(--cd);border-radius:11px;border:1px solid var(--bd);box-shadow:0 1px 5px rgba(0,0,0,.05);padding:16px 18px;margin-bottom:11px}
+.mtabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.mt{padding:6px 13px;border-radius:7px;cursor:pointer;border:1.5px solid var(--bd);background:#fff;font-size:.83rem;color:var(--mu);transition:all .15s}
+.mt:hover,.mt.on{border-color:var(--p);color:var(--p)}
+.mt.on{background:var(--pl);font-weight:600}
+label{font-size:.82rem;color:var(--mu);display:block;margin-bottom:4px;margin-top:10px}
+label:first-child{margin-top:0}
+textarea,input[type=text],input[type=number],select{width:100%;padding:7px 10px;border:1.5px solid var(--bd);border-radius:6px;font-size:.9rem;font-family:inherit;background:#fafbff;outline:none;transition:border .15s}
+textarea:focus,input:focus,select:focus{border-color:var(--p)}
+textarea{resize:vertical;min-height:66px}
+.row{display:flex;gap:9px;flex-wrap:wrap}
+.row>div{flex:1;min-width:110px}
+.btn{margin-top:12px;padding:7px 18px;background:var(--p);color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:.9rem;font-weight:600;transition:background .15s}
+.btn:hover{background:var(--pd)}
+.res{margin-top:11px;padding:12px 14px;background:var(--okb);border-radius:7px;border-left:3px solid var(--ok);color:var(--tx);font-size:.9rem;line-height:1.85;display:none}
+.res.on{display:block}
+.fl{font-size:1.02rem;font-weight:700;color:var(--ok)}
+.ibox{background:var(--wb);border:1px solid #fcd34d;border-radius:7px;padding:8px 12px;font-size:.81rem;color:#92400e;margin:9px 0}
+.fbox{background:var(--pl);border-radius:6px;padding:7px 12px;font-size:.85rem;color:var(--pd);margin:8px 0;font-family:'Courier New',monospace}
+table{width:100%;border-collapse:collapse;font-size:.84rem;margin-top:7px}
+th{background:#f1f5f9;padding:7px 8px;text-align:left;font-weight:600}
+td{padding:6px 8px;border-bottom:1px solid var(--bd)}
+.tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:11px}
+.tb{padding:4px 11px;border-radius:20px;border:1.5px solid var(--bd);background:#fff;color:var(--mu);font-size:.79rem;cursor:pointer}
+.tb.on{background:var(--p);color:#fff;border-color:var(--p)}
+.tc{display:none}
+.tc.on{display:block}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.fi{background:#f1f5f9;border-radius:7px;padding:10px 12px}
+.fi .fn{font-weight:600;color:var(--p);font-size:.83rem}
+.fi .fe{font-family:monospace;margin:4px 0;font-size:.91rem}
+.fi .fd{font-size:.76rem;color:var(--mu)}
+canvas{border:1px solid var(--bd);border-radius:7px;margin-top:9px;max-width:100%;display:none}
+footer{text-align:center;color:var(--mu);font-size:.77rem;padding:20px}
 </style>
 </head>
 <body>
-
 <nav>
-  <div class="brand">🔬 物理实验助手</div>
-  <a href="#ua">A类不确定度</a>
-  <a href="#ub">B类不确定度</a>
-  <a href="#uc">合成不确定度</a>
-  <a href="#successive">逐差法</a>
-  <a href="#regression">线性回归</a>
-  <a href="#propagation">误差传递</a>
-  <a href="#constants">物理常数</a>
-  <a href="#formulas">公式速查</a>
+<div class="brand">🔬 物理实验助手</div>
+<a href="#s1">① 录入数据</a>
+<a href="#s2">② 数据处理</a>
+<a href="#s3">③ 不确定度</a>
+<a href="#s4">④ 误差传递</a>
+<a href="#s5">⑤ 最终结果</a>
+<a href="#ref">参考资料</a>
 </nav>
-
-<div class="container">
-  <div class="hero">
-    <h1>🔬 大学物理实验数据处理助手</h1>
-    <p>涵盖不确定度分析、逐差法、线性回归、误差传递等全部数据处理方法</p>
-  </div>
-
-  <!-- ===== A类不确定度 ===== -->
-  <div class="card" id="ua">
-    <h2>📊 A类不确定度计算器</h2>
-    <div class="subtitle">适用于多次重复测量的随机误差评定</div>
-    <div class="formula-box">
-      \( u_A = \sqrt{\dfrac{\sum_{i=1}^{n}(x_i - \bar{x})^2}{n(n-1)}} \)
-    </div>
-    <label>输入测量数据（用逗号、空格或换行分隔）</label>
-    <textarea id="ua-input" placeholder="例如：1.23, 1.25, 1.22, 1.24, 1.23"></textarea>
-    <button onclick="calcUA()">计算</button>
-    <div class="result" id="ua-result"></div>
-  </div>
-
-  <!-- ===== B类不确定度 ===== -->
-  <div class="card" id="ub">
-    <h2>📏 B类不确定度计算器</h2>
-    <div class="subtitle">由仪器误差限或其他非统计方法评定</div>
-    <div class="formula-box">
-      均匀分布：\( u_B = \dfrac{\Delta_{仪}}{\sqrt{3}} \) &nbsp;|&nbsp;
-      正态分布：\( u_B = \dfrac{\Delta_{仪}}{3} \) &nbsp;|&nbsp;
-      三角分布：\( u_B = \dfrac{\Delta_{仪}}{\sqrt{6}} \)
-    </div>
-    <label>仪器最大误差限 Δ（仪器允差）</label>
-    <input type="number" id="ub-delta" placeholder="例如：0.02" step="any">
-    <label>误差分布类型</label>
-    <select id="ub-type">
-      <option value="uniform">均匀分布（最常用，C = √3）</option>
-      <option value="normal">正态分布（C = 3）</option>
-      <option value="triangle">三角分布（C = √6）</option>
-    </select>
-    <button onclick="calcUB()">计算</button>
-    <div class="result" id="ub-result"></div>
-  </div>
-
-  <!-- ===== 合成不确定度 ===== -->
-  <div class="card" id="uc">
-    <h2>⚗️ 合成不确定度与结果表示</h2>
-    <div class="subtitle">将A类和B类不确定度合成，给出最终测量结果</div>
-    <div class="formula-box">
-      \( u_c = \sqrt{u_A^2 + u_B^2} \) &nbsp;|&nbsp;
-      \( u_r = \dfrac{u_c}{|\bar{x}|} \times 100\% \) &nbsp;|&nbsp;
-      结果：\( x = \bar{x} \pm u_c \)（单位）
-    </div>
-    <div class="row">
-      <div>
-        <label>A类不确定度 u_A</label>
-        <input type="number" id="uc-ua" placeholder="例如：0.012" step="any">
-      </div>
-      <div>
-        <label>B类不确定度 u_B</label>
-        <input type="number" id="uc-ub" placeholder="例如：0.006" step="any">
-      </div>
-      <div>
-        <label>测量均值 x̄（用于相对不确定度）</label>
-        <input type="number" id="uc-mean" placeholder="例如：1.234" step="any">
-      </div>
-      <div>
-        <label>单位（可选）</label>
-        <input type="text" id="uc-unit" placeholder="例如：cm">
-      </div>
-    </div>
-    <button onclick="calcUC()">计算</button>
-    <div class="result" id="uc-result"></div>
-  </div>
-
-  <!-- ===== 逐差法 ===== -->
-  <div class="card" id="successive">
-    <h2>🔢 逐差法计算器</h2>
-    <div class="subtitle">适用于等间距线性变化的系列测量，可充分利用所有数据</div>
-    <div class="formula-box">
-      将 2n 个数据分为前后两组，对应相减：\( \Delta_i = x_{i+n} - x_i \)，再取平均：\( \bar{\Delta} = \dfrac{1}{n}\sum_{i=1}^{n}\Delta_i \)
-    </div>
-    <label>输入测量数据（按顺序，用逗号/空格/换行分隔，建议偶数个，最少4个）</label>
-    <textarea id="succ-input" placeholder="例如（8个）：0.00, 2.15, 4.28, 6.41, 8.55, 10.68, 12.82, 14.95"></textarea>
-    <label>每次变化的自变量间隔 Δx（可选，用于计算斜率）</label>
-    <input type="number" id="succ-dx" placeholder="例如：1（若不需要可留空）" step="any">
-    <button onclick="calcSuccessive()">计算</button>
-    <div class="result" id="succ-result"></div>
-  </div>
-
-  <!-- ===== 线性回归 ===== -->
-  <div class="card" id="regression">
-    <h2>📈 线性回归（最小二乘法）</h2>
-    <div class="subtitle">求最佳拟合直线 y = kx + b，并评估线性相关性</div>
-    <div class="formula-box">
-      \( k = \dfrac{n\sum x_i y_i - \sum x_i \sum y_i}{n\sum x_i^2 - \left(\sum x_i\right)^2} \) &nbsp;
-      \( b = \bar{y} - k\bar{x} \) &nbsp;
-      \( r = \dfrac{n\sum x_i y_i - \sum x_i \sum y_i}{\sqrt{\left[n\sum x_i^2-(\sum x_i)^2\right]\left[n\sum y_i^2-(\sum y_i)^2\right]}} \)
-    </div>
-    <label>输入数据（每行一对 x y，用空格或逗号分隔）</label>
-    <textarea id="reg-input" placeholder="例如：
-1 2.1
-2 3.9
-3 6.2
-4 7.8
-5 10.1"></textarea>
-    <button onclick="calcRegression()">计算并绘图</button>
-    <div class="result" id="reg-result"></div>
-    <canvas id="reg-canvas" width="600" height="350" style="display:none"></canvas>
-  </div>
-
-  <!-- ===== 误差传递 ===== -->
-  <div class="card" id="propagation">
-    <h2>🔗 误差传递计算器</h2>
-    <div class="subtitle">根据函数关系计算间接测量量的不确定度</div>
-    <label>选择函数类型</label>
-    <select id="prop-func" onchange="updatePropFormula()">
-      <option value="xy">f = x · y（两变量之积）</option>
-      <option value="xdy">f = x / y（两变量之商）</option>
-      <option value="xn">f = xⁿ（幂函数）</option>
-      <option value="sqrtx">f = √x（开方）</option>
-      <option value="lnx">f = ln(x)</option>
-      <option value="sinx">f = sin(x)</option>
-      <option value="cosx">f = cos(x)</option>
-      <option value="xplusy">f = x + y（和）</option>
-      <option value="xminusy">f = x - y（差）</option>
-    </select>
-    <div class="formula-box" id="prop-formula">
-      \( \dfrac{u_f}{f} = \sqrt{\left(\dfrac{u_x}{x}\right)^2 + \left(\dfrac{u_y}{y}\right)^2} \)
-    </div>
-    <div id="prop-inputs"></div>
-    <button onclick="calcPropagation()">计算</button>
-    <div class="result" id="prop-result"></div>
-  </div>
-
-  <!-- ===== 物理常数 ===== -->
-  <div class="card" id="constants">
-    <h2>🌍 常用物理常数</h2>
-    <div class="subtitle">点击数值可复制</div>
-    <table>
-      <thead><tr><th>常数名称</th><th>符号</th><th>数值</th><th>单位</th><th></th></tr></thead>
-      <tbody id="constants-table"></tbody>
-    </table>
-  </div>
-
-  <!-- ===== 公式速查 ===== -->
-  <div class="card" id="formulas">
-    <h2>📚 实验公式速查</h2>
-    <div class="tabs">
-      <button class="tab-btn active" onclick="switchTab('mech', this)">力学</button>
-      <button class="tab-btn" onclick="switchTab('elec', this)">电学</button>
-      <button class="tab-btn" onclick="switchTab('optic', this)">光学</button>
-      <button class="tab-btn" onclick="switchTab('thermo', this)">热学</button>
-    </div>
-    <div id="tab-mech" class="tab-content active"></div>
-    <div id="tab-elec" class="tab-content"></div>
-    <div id="tab-optic" class="tab-content"></div>
-    <div id="tab-thermo" class="tab-content"></div>
-  </div>
-
+<div class="wrap">
+<div class="hero">
+<h1>🔬 大学物理实验数据处理助手</h1>
+<p>标准流程 · 结果自动带入下一步 · 输出可直接写入报告</p>
+</div>
+<div class="flowbar">
+<span class="ft">① 录入数据+仪器信息</span><span class="fa">→</span>
+<span class="ft">② 选处理方法（均值/逐差/回归）</span><span class="fa">→</span>
+<span class="ft">③ 算不确定度</span><span class="fa">→</span>
+<span class="ft">④ 误差传递（间接量）</span><span class="fa">→</span>
+<span class="ft">⑤ 规范表达</span>
 </div>
 
+<!-- S1 -->
+<div class="sec" id="s1">
+<div class="sh"><div class="sn">1</div><h2>录入原始数据与仪器信息</h2><span class="sub">— 后续步骤自动带入</span></div>
+<div class="card">
+<div class="row">
+<div><label>测量量名称</label><input type="text" id="qn" placeholder="例如：摆长 L"></div>
+<div><label>单位</label><input type="text" id="qu" placeholder="例如：cm"></div>
+</div>
+<label>各次测量值（逗号/空格/换行分隔）</label>
+<textarea id="rd" placeholder="例如：98.21, 98.35, 98.18, 98.30, 98.26, 98.22"></textarea>
+<div class="row">
+<div><label>仪器名称</label><input type="text" id="in" placeholder="例如：毫米刻度尺"></div>
+<div><label>仪器误差限 Δ仪</label><input type="number" id="id" placeholder="例如：0.05" step="any"></div>
+</div>
+<label>误差分布类型</label>
+<select id="it">
+<option value="u">均匀分布（最常用）C=√3≈1.732</option>
+<option value="n">正态分布 C=3</option>
+<option value="t">三角分布 C=√6≈2.449</option>
+</select>
+<button class="btn" onclick="s1()">确认 → 进入数据处理 ▶</button>
+<div class="res" id="r1"></div>
+</div>
+</div>
+
+<!-- S2 -->
+<div class="sec" id="s2">
+<div class="sh"><div class="sn">2</div><h2>数据处理</h2><span class="sub">— 根据实验类型选择方法，结果自动带入第③步</span></div>
+<div class="card">
+<div class="ibox">⚠️ 先完成第①步，数据会自动带入；也可手动使用</div>
+<div class="mtabs">
+<div class="mt on" onclick="swM('d',this)">直接多次测量（均值法）</div>
+<div class="mt" onclick="swM('s',this)">逐差法</div>
+<div class="mt" onclick="swM('r',this)">最小二乘法（线性回归）</div>
+</div>
+<div id="md">
+<div class="fbox">x̄ = Σxᵢ/n　　uA = √[Σ(xᵢ-x̄)²/(n(n-1))]</div>
+<div class="ibox">适用：对同一物理量重复多次测量，数据无特殊规律</div>
+<button class="btn" onclick="cDirect()">计算均值与A类不确定度</button>
+<div class="res" id="rd2"></div>
+</div>
+<div id="ms" style="display:none">
+<div class="fbox">分2组：Δᵢ=x_{i+n}−xᵢ，均值 Δ̄=ΣΔᵢ/n，uA=√[Σ(Δᵢ-Δ̄)²/(n(n-1))]</div>
+<div class="ibox">适用：等间距线性变化数据（如弹簧逐步加砝码），数据个数须为偶数</div>
+<label>自变量间隔 Δx（可选，用于求斜率）</label>
+<input type="number" id="sdx" placeholder="例如：50（g）或 1，不需要可留空" step="any">
+<button class="btn" onclick="cSucc()">逐差法计算</button>
+<div class="res" id="rs"></div>
+</div>
+<div id="mr" style="display:none">
+<div class="fbox">k=(nΣxᵢyᵢ−ΣxᵢΣyᵢ)/(nΣxᵢ²−(Σxᵢ)²)　b=ȳ−kx̄　r=相关系数</div>
+<div class="ibox">适用：求两物理量之间线性关系的斜率与截距</div>
+<div class="row">
+<div><label>x 数据</label><textarea id="rx" placeholder="1, 2, 3, 4, 5" style="min-height:46px"></textarea></div>
+<div><label>y 数据（与x一一对应）</label><textarea id="ry" placeholder="2.1, 3.9, 6.2, 7.8, 10.1" style="min-height:46px"></textarea></div>
+</div>
+<div class="row">
+<div><label>x 单位</label><input type="text" id="rxu" placeholder="例如：s²"></div>
+<div><label>y 单位</label><input type="text" id="ryu" placeholder="例如：m"></div>
+</div>
+<button class="btn" onclick="cReg()">线性回归并绘图</button>
+<div class="res" id="rr"></div>
+<canvas id="rc" width="540" height="290"></canvas>
+</div>
+</div>
+</div>
+
+<!-- S3 -->
+<div class="sec" id="s3">
+<div class="sh"><div class="sn">3</div><h2>不确定度评定</h2><span class="sub">— 第①②步结果自动带入，可手动修改</span></div>
+<div class="card">
+<div class="fbox">uc=√(uA²+uB²)　　ur=uc/|x̄|×100%　　结果：x̄±uc（单位）</div>
+<div class="row">
+<div><label>均值 x̄</label><input type="number" id="um" placeholder="来自第②步" step="any"></div>
+<div><label>A类不确定度 uA</label><input type="number" id="ua" placeholder="来自第②步" step="any"></div>
+<div><label>B类不确定度 uB</label><input type="number" id="ub" placeholder="来自第①步" step="any"></div>
+<div><label>单位</label><input type="text" id="uu" placeholder="自动带入"></div>
+</div>
+<button class="btn" onclick="cUC()">计算合成不确定度</button>
+<div class="res" id="ruc"></div>
+</div>
+</div>
+
+<!-- S4 -->
+<div class="sec" id="s4">
+<div class="sh"><div class="sn">4</div><h2>误差传递（间接测量量）</h2><span class="sub">— 最终量需代入公式时使用，否则跳过</span></div>
+<div class="card">
+<div class="ibox">若直接测量量就是最终结果，跳过此步直接到第⑤步</div>
+<label>函数类型</label>
+<select id="pf" onchange="upProp()">
+<option value="xy">f=x·y　→　ur(f)=√[ur(x)²+ur(y)²]</option>
+<option value="xdy">f=x/y　→　ur(f)=√[ur(x)²+ur(y)²]</option>
+<option value="xn">f=xⁿ　→　ur(f)=|n|·ur(x)</option>
+<option value="sq">f=√x　→　ur(f)=ur(x)/2</option>
+<option value="ln">f=ln(x)　→　u(f)=u(x)/|x|</option>
+<option value="sin">f=sin(x)，x单位：弧度　→　u(f)=|cos(x)|·u(x)</option>
+<option value="cos">f=cos(x)，x单位：弧度　→　u(f)=|sin(x)|·u(x)</option>
+<option value="xpy">f=x+y　→　u(f)=√[u(x)²+u(y)²]</option>
+<option value="xmy">f=x-y　→　u(f)=√[u(x)²+u(y)²]</option>
+</select>
+<div id="pi"></div>
+<button class="btn" onclick="cProp()">计算间接量及不确定度</button>
+<div class="res" id="rp"></div>
+</div>
+</div>
+
+<!-- S5 -->
+<div class="sec" id="s5">
+<div class="sh"><div class="sn">5</div><h2>最终结果规范表达</h2><span class="sub">— 自动对齐有效数字，可直接写入报告</span></div>
+<div class="card">
+<div class="ibox">规则：不确定度保留1~2位有效数字，结果末位与不确定度末位对齐</div>
+<div class="row">
+<div><label>测量/计算结果值</label><input type="number" id="fv" placeholder="来自②③④步" step="any"></div>
+<div><label>合成不确定度 uc</label><input type="number" id="fu" placeholder="来自第③④步" step="any"></div>
+<div><label>物理量名称与单位</label><input type="text" id="fi" placeholder="例如：g，单位 m/s²"></div>
+</div>
+<button class="btn" onclick="cFin()">生成规范结果</button>
+<div class="res" id="rf"></div>
+</div>
+</div>
+
+<!-- REF -->
+<div class="sec" id="ref">
+<div class="sh"><div class="sn" style="background:var(--mu)">参</div><h2>参考资料</h2></div>
+<div class="card">
+<h3 style="color:var(--p);margin-bottom:9px">📌 常用物理常数</h3>
+<table><thead><tr><th>名称</th><th>符号</th><th>数值</th><th>单位</th><th></th></tr></thead><tbody id="ctb"></tbody></table>
+</div>
+<div class="card">
+<h3 style="color:var(--p);margin-bottom:9px">📚 实验公式速查</h3>
+<div class="tabs">
+<button class="tb on" onclick="swT('mc',this)">力学</button>
+<button class="tb" onclick="swT('el',this)">电学</button>
+<button class="tb" onclick="swT('op',this)">光学</button>
+<button class="tb" onclick="swT('th',this)">热学</button>
+</div>
+<div id="tmc" class="tc on"></div>
+<div id="tel" class="tc"></div>
+<div id="top" class="tc"></div>
+<div id="tth" class="tc"></div>
+</div>
+</div>
+</div>
 <footer>大学物理实验数据处理助手 · 七七制作 🌸</footer>
-
 <script>
-// ===== 工具函数 =====
-function parseNums(str) {
-  return str.split(/[\s,，\n]+/).map(s => s.trim()).filter(s => s !== '').map(Number).filter(n => !isNaN(n));
+const pN=s=>s.split(/[\s,，\n]+/).map(v=>v.trim()).filter(v=>v!=='').map(Number).filter(n=>!isNaN(n));
+const sf=(n,d=4)=>n===0?'0':parseFloat(n.toPrecision(d)).toString();
+const show=(id,h)=>{const e=document.getElementById(id);e.innerHTML=h;e.classList.add('on')};
+function align(v,u){if(!u||u===0)return{v:v.toString(),u:'0'};const e=Math.floor(Math.log10(Math.abs(u)));const d=Math.max(0,-e);const f=Math.pow(10,-e);return{v:(Math.round(v*f)/f).toFixed(d),u:(Math.round(u*f)/f).toFixed(d)}}
+let G={nums:[],mean:0,uA:0,uB:0,unit:''};
+function s1(){
+  const nums=pN(document.getElementById('rd').value);
+  const delta=parseFloat(document.getElementById('id').value);
+  const dist=document.getElementById('it').value;
+  const unit=document.getElementById('qu').value.trim();
+  if(nums.length<2){alert('请至少输入2个数据');return;}
+  const n=nums.length,mean=nums.reduce((a,b)=>a+b,0)/n;
+  const sq=nums.reduce((s,x)=>s+(x-mean)**2,0);
+  const uA=Math.sqrt(sq/(n*(n-1)));
+  const C={u:Math.sqrt(3),n:3,t:Math.sqrt(6)}[dist];
+  const uB=isNaN(delta)||delta<=0?0:delta/C;
+  G={nums,mean,uA,uB,unit};
+  ['um','fv'].forEach(id=>document.getElementById(id).value=sf(mean,7));
+  document.getElementById('ua').value=sf(uA,4);
+  document.getElementById('ub').value=sf(uB,4);
+  document.getElementById('uu').value=unit;
+  show('r1',`录入 <b>${n}</b> 个数据，均值 x̄=<b>${sf(mean,7)} ${unit}</b><br>初步 uA=${sf(uA,3)}，uB=${sf(uB,3)}<br><span style="color:var(--ok)">✅ 已自动带入后续步骤，请选择数据处理方法</span>`);
 }
-function sig(n, digits=4) {
-  if (n === 0) return '0';
-  return parseFloat(n.toPrecision(digits)).toString();
+function swM(n,el){['d','s','r'].forEach(m=>document.getElementById('m'+m).style.display=m===n?'block':'none');document.querySelectorAll('.mt').forEach(t=>t.classList.remove('on'));el.classList.add('on');}
+function cDirect(){
+  const nums=G.nums.length>0?G.nums:pN(document.getElementById('rd').value);
+  if(nums.length<2){alert('请先完成第①步');return;}
+  const n=nums.length,mean=nums.reduce((a,b)=>a+b,0)/n;
+  const sq=nums.reduce((s,x)=>s+(x-mean)**2,0);
+  const uA=Math.sqrt(sq/(n*(n-1)));
+  document.getElementById('um').value=sf(mean,7);
+  document.getElementById('ua').value=sf(uA,4);
+  document.getElementById('fv').value=sf(mean,7);
+  const det=nums.map((x,i)=>`x${i+1}=${x}，(xᵢ-x̄)²=${sf((x-mean)**2,3)}`).join(' | ');
+  show('rd2',`n=${n}，均值 x̄=<b>${sf(mean,7)} ${G.unit}</b><br>偏差平方和=${sf(sq,4)}<br><b>A类不确定度 uA=${sf(uA,4)}</b><br><small style="color:var(--mu);font-size:.78rem">${det}</small><br><span style="color:var(--ok)">✅ 已自动带入第③步</span>`);
 }
-function showResult(id, html) {
-  const el = document.getElementById(id);
-  el.innerHTML = html;
-  el.classList.add('show');
+function cSucc(){
+  const nums=G.nums.length>0?G.nums:pN(document.getElementById('rd').value);
+  if(nums.length<4){alert('至少需要4个数据，请先完成第①步');return;}
+  let n=nums.length;if(n%2!==0)n--;
+  const h=n/2,ds=[],det=[];
+  for(let i=0;i<h;i++){const d=nums[i+h]-nums[i];ds.push(d);det.push(`Δ${i+1}=x${i+h+1}−x${i+1}=${nums[i+h]}−${nums[i]}=${sf(d,4)}`)}
+  const mD=ds.reduce((a,b)=>a+b,0)/h;
+  const sq=ds.reduce((s,d)=>s+(d-mD)**2,0);
+  const uA=h>1?Math.sqrt(sq/(h*(h-1))):0;
+  document.getElementById('um').value=sf(mD,6);
+  document.getElementById('ua').value=sf(uA,4);
+  document.getElementById('fv').value=sf(mD,6);
+  const dx=parseFloat(document.getElementById('sdx').value);
+  let html=`使用前${n}个数据，分两组（各${h}个）<br>${det.join('<br>')}<br><br><b>平均差值 Δ̄=${sf(mD,5)} ${G.unit}</b><br>`;
+  if(h>1)html+=`A类不确定度 uA=${sf(uA,4)}<br>`;
+  if(!isNaN(dx)&&dx>0)html+=`斜率=${sf(mD,5)}/(${h}×${dx})=<b>${sf(mD/(h*dx),5)}</b><br>`;
+  html+=`<span style="color:var(--ok)">✅ 已自动带入第③步</span>`;
+  show('rs',html);
 }
-
-// ===== A类不确定度 =====
-function calcUA() {
-  const nums = parseNums(document.getElementById('ua-input').value);
-  if (nums.length < 2) { alert('请至少输入2个数据'); return; }
-  const n = nums.length;
-  const mean = nums.reduce((a,b)=>a+b,0)/n;
-  const sq = nums.reduce((s,x)=>s+(x-mean)**2, 0);
-  const uA = Math.sqrt(sq/(n*(n-1)));
-  const details = nums.map((x,i)=>`x${i+1}=${x}, (x${i+1}-x̄)²=${sig((x-mean)**2)}`).join('<br>');
-  showResult('ua-result', `
-    <strong>均值 x̄ = ${sig(mean,6)}</strong><br>
-    数据个数 n = ${n}<br>
-    偏差平方和 Σ(xi-x̄)² = ${sig(sq)}<br>
-    <strong>A类不确定度 u_A = ${sig(uA)} </strong><br><br>
-    <details><summary>展开计算细节</summary><br>${details}</details>
-  `);
+function cReg(){
+  const xs=pN(document.getElementById('rx').value),ys=pN(document.getElementById('ry').value);
+  if(xs.length<2||xs.length!==ys.length){alert('x与y数据个数须相同且至少2组');return;}
+  const n=xs.length,sx=xs.reduce((a,b)=>a+b,0),sy=ys.reduce((a,b)=>a+b,0);
+  const sxy=xs.reduce((s,x,i)=>s+x*ys[i],0),sx2=xs.reduce((s,x)=>s+x*x,0),sy2=ys.reduce((s,y)=>s+y*y,0);
+  const k=(n*sxy-sx*sy)/(n*sx2-sx**2),b=(sy-k*sx)/n;
+  const r=(n*sxy-sx*sy)/Math.sqrt((n*sx2-sx**2)*(n*sy2-sy**2));
+  const xu=document.getElementById('rxu').value,yu=document.getElementById('ryu').value;
+  document.getElementById('fv').value=sf(k,6);
+  const rq=Math.abs(r)>0.999?'极好✅':Math.abs(r)>0.99?'良好✅':Math.abs(r)>0.95?'一般⚠️':'较差❌';
+  show('rr',`n=${n}<br><b>斜率 k=${sf(k,6)} ${yu?yu+'/'+xu:''}</b><br><b>截距 b=${sf(b,6)} ${yu||''}</b><br><b>相关系数 r=${sf(r,6)}</b>，线性相关${rq}<br>拟合方程：y=${sf(k,4)}x${b>=0?'+':''}${sf(b,4)}<br><span style="color:var(--ok)">✅ 斜率k已带入第⑤步</span>`);
+  drawReg(xs,ys,k,b,r,xu,yu);
 }
-
-// ===== B类不确定度 =====
-function calcUB() {
-  const delta = parseFloat(document.getElementById('ub-delta').value);
-  const type = document.getElementById('ub-type').value;
-  if (isNaN(delta) || delta <= 0) { alert('请输入有效的误差限'); return; }
-  const C = {uniform: Math.sqrt(3), normal: 3, triangle: Math.sqrt(6)}[type];
-  const names = {uniform:'均匀分布（C=√3）', normal:'正态分布（C=3）', triangle:'三角分布（C=√6）'};
-  const uB = delta / C;
-  showResult('ub-result', `
-    分布类型：${names[type]}<br>
-    Δ = ${delta}，C = ${sig(C)}<br>
-    <strong>B类不确定度 u_B = Δ/C = ${sig(uB)}</strong>
-  `);
-}
-
-// ===== 合成不确定度 =====
-function calcUC() {
-  const uA = parseFloat(document.getElementById('uc-ua').value);
-  const uB = parseFloat(document.getElementById('uc-ub').value);
-  const mean = parseFloat(document.getElementById('uc-mean').value);
-  const unit = document.getElementById('uc-unit').value.trim() || '';
-  if (isNaN(uA) || isNaN(uB)) { alert('请输入uA和uB'); return; }
-  const uc = Math.sqrt(uA**2 + uB**2);
-  let html = `
-    u_A = ${uA}, u_B = ${uB}<br>
-    <strong>合成不确定度 u_c = √(u_A²+u_B²) = ${sig(uc)}</strong><br>
-  `;
-  if (!isNaN(mean) && mean !== 0) {
-    const ur = uc / Math.abs(mean) * 100;
-    html += `相对不确定度 u_r = ${sig(ur)}%<br>`;
-    html += `<strong>测量结果：x = (${sig(mean,6)} ± ${sig(uc)}) ${unit}</strong>`;
-  }
-  showResult('uc-result', html);
-}
-
-// ===== 逐差法 =====
-function calcSuccessive() {
-  const nums = parseNums(document.getElementById('succ-input').value);
-  const dx = parseFloat(document.getElementById('succ-dx').value);
-  if (nums.length < 4) { alert('至少需要4个数据'); return; }
-  let n = nums.length;
-  if (n % 2 !== 0) { n--; } // 取偶数
-  const half = n / 2;
-  const deltas = [];
-  let detail = '';
-  for (let i = 0; i < half; i++) {
-    const d = nums[i+half] - nums[i];
-    deltas.push(d);
-    detail += `Δ${i+1} = x${i+half+1} - x${i+1} = ${nums[i+half]} - ${nums[i]} = ${sig(d)}<br>`;
-  }
-  const avgDelta = deltas.reduce((a,b)=>a+b,0)/half;
-  // 计算不确定度（逐差结果的标准偏差）
-  const sqd = deltas.reduce((s,d)=>s+(d-avgDelta)**2, 0);
-  const uDelta = half > 1 ? Math.sqrt(sqd/(half*(half-1))) : 0;
-
-  let html = `使用前 ${n} 个数据，分为两组（各 ${half} 个）<br><br>${detail}<br>`;
-  html += `<strong>平均差值 Δ̄ = ${sig(avgDelta)}</strong><br>`;
-  if (half > 1) html += `A类不确定度 u(Δ̄) = ${sig(uDelta)}<br>`;
-  if (!isNaN(dx) && dx > 0) {
-    const slope = avgDelta / (half * dx);
-    html += `<br>自变量间隔 Δx = ${dx}<br>`;
-    html += `<strong>斜率（变化率）= Δ̄ / (${half}×${dx}) = ${sig(slope)}</strong>`;
-  }
-  showResult('succ-result', html);
-}
-
-// ===== 线性回归 =====
-function calcRegression() {
-  const lines = document.getElementById('reg-input').value.trim().split('\n').filter(l=>l.trim());
-  const pts = lines.map(l => l.trim().split(/[\s,，]+/).map(Number)).filter(p=>p.length>=2 && !isNaN(p[0]) && !isNaN(p[1]));
-  if (pts.length < 2) { alert('请至少输入2组数据'); return; }
-  const xs = pts.map(p=>p[0]), ys = pts.map(p=>p[1]);
-  const n = pts.length;
-  const sumX=xs.reduce((a,b)=>a+b,0), sumY=ys.reduce((a,b)=>a+b,0);
-  const sumXY=pts.reduce((s,p)=>s+p[0]*p[1],0);
-  const sumX2=xs.reduce((s,x)=>s+x*x,0), sumY2=ys.reduce((s,y)=>s+y*y,0);
-  const k = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX**2);
-  const b = (sumY - k*sumX) / n;
-  const r = (n*sumXY - sumX*sumY) / Math.sqrt((n*sumX2-sumX**2)*(n*sumY2-sumY**2));
-  showResult('reg-result', `
-    数据点数 n = ${n}<br>
-    <strong>斜率 k = ${sig(k,6)}</strong><br>
-    <strong>截距 b = ${sig(b,6)}</strong><br>
-    <strong>相关系数 r = ${sig(r,6)}</strong>
-    ${Math.abs(r)>0.999 ? ' ✅ 线性相关极好' : Math.abs(r)>0.99 ? ' ✅ 线性相关良好' : Math.abs(r)>0.95 ? ' ⚠️ 线性相关一般' : ' ❌ 线性相关较差'}<br>
-    拟合方程：y = ${sig(k,4)}x ${b>=0?'+':''}${sig(b,4)}
-  `);
-  // 绘图
-  const canvas = document.getElementById('reg-canvas');
-  canvas.style.display = 'block';
-  const ctx = canvas.getContext('2d');
-  const W=canvas.width, H=canvas.height, pad=50;
-  ctx.clearRect(0,0,W,H);
-  const xmin=Math.min(...xs), xmax=Math.max(...xs), ymin=Math.min(...ys), ymax=Math.max(...ys);
-  const xr=xmax-xmin||1, yr=ymax-ymin||1;
-  const toX=x=>pad+(x-xmin)/xr*(W-2*pad);
-  const toY=y=>H-pad-(y-ymin)/yr*(H-2*pad);
-  // 背景
-  ctx.fillStyle='#f5f8ff'; ctx.fillRect(0,0,W,H);
-  // 轴
-  ctx.strokeStyle='#aaa'; ctx.lineWidth=1;
-  ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,H-pad); ctx.lineTo(W-pad,H-pad); ctx.stroke();
-  // 刻度标签
-  ctx.fillStyle='#666'; ctx.font='12px sans-serif'; ctx.textAlign='center';
-  [0,0.25,0.5,0.75,1].forEach(t=>{
-    const xv=xmin+t*xr, yv=ymin+t*yr;
-    const px=toX(xv), py=toY(yv);
-    ctx.fillText(sig(xv,3), px, H-pad+16);
-    ctx.textAlign='right';
-    ctx.fillText(sig(yv,3), pad-6, py+4);
-    ctx.textAlign='center';
+function drawReg(xs,ys,k,b,r,xu,yu){
+  const cv=document.getElementById('rc');cv.style.display='block';
+  const ctx=cv.getContext('2d'),W=cv.width,H=cv.height,pad=48;
+  const xmn=Math.min(...xs),xmx=Math.max(...xs),ymn=Math.min(...ys),ymx=Math.max(...ys);
+  const xr=xmx-xmn||1,yr=ymx-ymn||1;
+  const tx=x=>pad+(x-xmn)/xr*(W-2*pad),ty=y=>H-pad-(y-ymn)/yr*(H-2*pad);
+  ctx.fillStyle='#f8fafc';ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(pad,pad);ctx.lineTo(pad,H-pad);ctx.lineTo(W-pad,H-pad);ctx.stroke();
+  ctx.fillStyle='#64748b';ctx.font='11px sans-serif';ctx.textAlign='center';
+  [0,.25,.5,.75,1].forEach(t=>{
+    const xv=xmn+t*xr,yv=ymn+t*yr;
+    ctx.fillText(sf(xv,3),tx(xv),H-pad+14);
+    ctx.textAlign='right';ctx.fillText(sf(yv,3),pad-4,ty(yv)+4);ctx.textAlign='center';
   });
-  // 拟合线
-  ctx.strokeStyle='#1a73e8'; ctx.lineWidth=2;
-  ctx.beginPath();
-  ctx.moveTo(toX(xmin), toY(k*xmin+b));
-  ctx.lineTo(toX(xmax), toY(k*xmax+b));
-  ctx.stroke();
-  // 散点
-  pts.forEach(p=>{
-    ctx.fillStyle='#e53935';
-    ctx.beginPath(); ctx.arc(toX(p[0]),toY(p[1]),5,0,Math.PI*2); ctx.fill();
-  });
-  // 图例
-  ctx.fillStyle='#1a73e8'; ctx.font='13px sans-serif'; ctx.textAlign='left';
-  ctx.fillText(`y = ${sig(k,4)}x ${b>=0?'+':''}${sig(b,4)}   r = ${sig(r,4)}`, pad+10, pad+20);
+  ctx.strokeStyle='#2563eb';ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(tx(xmn),ty(k*xmn+b));ctx.lineTo(tx(xmx),ty(k*xmx+b));ctx.stroke();
+  xs.forEach((x,i)=>{ctx.fillStyle='#ef4444';ctx.beginPath();ctx.arc(tx(x),ty(ys[i]),5,0,Math.PI*2);ctx.fill();});
+  ctx.fillStyle='#2563eb';ctx.textAlign='left';ctx.font='12px sans-serif';
+  ctx.fillText(`y=${sf(k,4)}x${b>=0?'+':''}${sf(b,4)}  r=${sf(r,4)}`,pad+8,pad+18);
+  if(xu)ctx.fillText('x: '+xu,W-pad-60,H-pad+14);
+  if(yu){ctx.textAlign='right';ctx.fillText('y: '+yu,pad-4,pad-6);}
 }
-
-// ===== 误差传递 =====
-const propConfigs = {
-  xy: {
-    formula: '\\( \\dfrac{u_f}{|f|} = \\sqrt{\\left(\\dfrac{u_x}{|x|}\\right)^2 + \\left(\\dfrac{u_y}{|y|}\\right)^2} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'x 的不确定度 u_x'},{name:'y',label:'y 的值'},{name:'uy',label:'y 的不确定度 u_y'}],    calc: (v) => { const f=v.x*v.y; const uf=Math.abs(f)*Math.sqrt((v.ux/Math.abs(v.x))**2+(v.uy/Math.abs(v.y))**2); return {f,uf}; }
-  },
-  xdy: {
-    formula: '\\( \\dfrac{u_f}{|f|} = \\sqrt{\\left(\\dfrac{u_x}{|x|}\\right)^2 + \\left(\\dfrac{u_y}{|y|}\\right)^2} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'u_x'},{name:'y',label:'y 的值'},{name:'uy',label:'u_y'}],
-    calc: (v) => { const f=v.x/v.y; const uf=Math.abs(f)*Math.sqrt((v.ux/Math.abs(v.x))**2+(v.uy/Math.abs(v.y))**2); return {f,uf}; }
-  },
-  xn: {
-    formula: '\\( \\dfrac{u_f}{|f|} = |n| \\cdot \\dfrac{u_x}{|x|} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'u_x'},{name:'n',label:'指数 n'}],
-    calc: (v) => { const f=Math.pow(Math.abs(v.x),v.n); const uf=Math.abs(v.n)*f*(v.ux/Math.abs(v.x)); return {f,uf}; }
-  },
-  sqrtx: {
-    formula: '\\( u_f = \\dfrac{u_x}{2\\sqrt{x}} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'u_x'}],
-    calc: (v) => { const f=Math.sqrt(v.x); const uf=v.ux/(2*f); return {f,uf}; }
-  },
-  lnx: {
-    formula: '\\( u_f = \\dfrac{u_x}{|x|} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'u_x'}],
-    calc: (v) => { const f=Math.log(v.x); const uf=v.ux/Math.abs(v.x); return {f,uf}; }
-  },
-  sinx: {
-    formula: '\\( u_f = |\\cos x| \\cdot u_x \\)（x 单位：弧度）',
-    vars: [{name:'x',label:'x 的值（弧度）'},{name:'ux',label:'u_x（弧度）'}],
-    calc: (v) => { const f=Math.sin(v.x); const uf=Math.abs(Math.cos(v.x))*v.ux; return {f,uf}; }
-  },
-  cosx: {
-    formula: '\\( u_f = |\\sin x| \\cdot u_x \\)（x 单位：弧度）',
-    vars: [{name:'x',label:'x 的值（弧度）'},{name:'ux',label:'u_x（弧度）'}],
-    calc: (v) => { const f=Math.cos(v.x); const uf=Math.abs(Math.sin(v.x))*v.ux; return {f,uf}; }
-  },
-  xplusy: {
-    formula: '\\( u_f = \\sqrt{u_x^2 + u_y^2} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'u_x'},{name:'y',label:'y 的值'},{name:'uy',label:'u_y'}],
-    calc: (v) => { const f=v.x+v.y; const uf=Math.sqrt(v.ux**2+v.uy**2); return {f,uf}; }
-  },
-  xminusy: {
-    formula: '\\( u_f = \\sqrt{u_x^2 + u_y^2} \\)',
-    vars: [{name:'x',label:'x 的值'},{name:'ux',label:'u_x'},{name:'y',label:'y 的值'},{name:'uy',label:'u_y'}],
-    calc: (v) => { const f=v.x-v.y; const uf=Math.sqrt(v.ux**2+v.uy**2); return {f,uf}; }
-  }
+function cUC(){
+  const m=parseFloat(document.getElementById('um').value);
+  const uA=parseFloat(document.getElementById('ua').value);
+  const uB=parseFloat(document.getElementById('ub').value);
+  const unit=document.getElementById('uu').value.trim();
+  if(isNaN(uA)||isNaN(uB)){alert('请填写uA和uB');return;}
+  const uc=Math.sqrt(uA**2+uB**2);
+  const ur=(!isNaN(m)&&m!==0)?uc/Math.abs(m)*100:null;
+  document.getElementById('fv').value=isNaN(m)?'':sf(m,7);
+  document.getElementById('fu').value=sf(uc,4);
+  document.getElementById('uu').value=unit;
+  let html=`uA=${sf(uA,4)}，uB=${sf(uB,4)}<br><b>合成不确定度 uc=√(uA²+uB²)=${sf(uc,4)} ${unit}</b><br>`;
+  if(ur!==null)html+=`相对不确定度 ur=${sf(ur,3)}%<br>`;
+  if(!isNaN(m))html+=`<b>测量结果：${sf(m,6)} ± ${sf(uc,4)} ${unit}</b><br>`;
+  html+=`<span style="color:var(--ok)">✅ 已自动带入第⑤步</span>`;
+  show('ruc',html);
+}
+const PC={
+  xy:{f:'ur(f)=√[ur(x)²+ur(y)²]',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'},{n:'y',l:'y 值'},{n:'uy',l:'u(y)'}],c:v=>{const f=v.x*v.y;return{f,uf:Math.abs(f)*Math.sqrt((v.ux/Math.abs(v.x))**2+(v.uy/Math.abs(v.y))**2)}}},
+  xdy:{f:'ur(f)=√[ur(x)²+ur(y)²]',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'},{n:'y',l:'y 值'},{n:'uy',l:'u(y)'}],c:v=>{const f=v.x/v.y;return{f,uf:Math.abs(f)*Math.sqrt((v.ux/Math.abs(v.x))**2+(v.uy/Math.abs(v.y))**2)}}},
+  xn:{f:'ur(f)=|n|·ur(x)',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'},{n:'n',l:'指数 n'}],c:v=>{const f=Math.pow(Math.abs(v.x),v.n);return{f,uf:Math.abs(v.n)*f*(v.ux/Math.abs(v.x))}}},
+  sq:{f:'ur(f)=ur(x)/2',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'}],c:v=>{const f=Math.sqrt(v.x);return{f,uf:v.ux/(2*f)}}},
+  ln:{f:'u(f)=u(x)/|x|',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'}],c:v=>{return{f:Math.log(v.x),uf:v.ux/Math.abs(v.x)}}},
+  sin:{f:'u(f)=|cos(x)|·u(x)',vars:[{n:'x',l:'x（弧度）'},{n:'ux',l:'u(x)（弧度）'}],c:v=>{return{f:Math.sin(v.x),uf:Math.abs(Math.cos(v.x))*v.ux}}},
+  cos:{f:'u(f)=|sin(x)|·u(x)',vars:[{n:'x',l:'x（弧度）'},{n:'ux',l:'u(x)（弧度）'}],c:v=>{return{f:Math.cos(v.x),uf:Math.abs(Math.sin(v.x))*v.ux}}},
+  xpy:{f:'u(f)=√[u(x)²+u(y)²]',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'},{n:'y',l:'y 值'},{n:'uy',l:'u(y)'}],c:v=>{return{f:v.x+v.y,uf:Math.sqrt(v.ux**2+v.uy**2)}}},
+  xmy:{f:'u(f)=√[u(x)²+u(y)²]',vars:[{n:'x',l:'x 值'},{n:'ux',l:'u(x)'},{n:'y',l:'y 值'},{n:'uy',l:'u(y)'}],c:v=>{return{f:v.x-v.y,uf:Math.sqrt(v.ux**2+v.uy**2)}}}
 };
-
-function updatePropFormula() {
-  const key = document.getElementById('prop-func').value;
-  const cfg = propConfigs[key];
-  document.getElementById('prop-formula').innerHTML = cfg.formula;
-  const container = document.getElementById('prop-inputs');
-  container.innerHTML = '';
-  cfg.vars.forEach(v => {
-    const lbl = document.createElement('label'); lbl.textContent = v.label;
-    const inp = document.createElement('input'); inp.type='number'; inp.id='prop-'+v.name; inp.step='any'; inp.placeholder='输入数值';
-    container.appendChild(lbl); container.appendChild(inp);
+function upProp(){
+  const k=document.getElementById('pf').value,cfg=PC[k];
+  const c=document.getElementById('pi');c.innerHTML='';
+  cfg.vars.forEach(v=>{
+    const l=document.createElement('label');l.textContent=v.l;
+    const i=document.createElement('input');i.type='number';i.id='pp-'+v.n;i.step='any';i.placeholder='输入数值';
+    c.appendChild(l);c.appendChild(i);
   });
-  if (window.MathJax) MathJax.typesetPromise([document.getElementById('prop-formula')]);
 }
-
-function calcPropagation() {
-  const key = document.getElementById('prop-func').value;
-  const cfg = propConfigs[key];
-  const vals = {};
-  for (const v of cfg.vars) {
-    const val = parseFloat(document.getElementById('prop-'+v.name).value);
-    if (isNaN(val)) { alert('请填写所有输入项'); return; }
-    vals[v.name] = val;
-  }
-  try {
-    const {f, uf} = cfg.calc(vals);
-    const ur = Math.abs(uf/f)*100;
-    showResult('prop-result', `
-      <strong>函数值 f = ${sig(f,6)}</strong><br>
-      <strong>不确定度 u_f = ${sig(uf,4)}</strong><br>
-      相对不确定度 u_r = ${sig(ur,4)}%<br>
-      结果：f = ${sig(f,4)} ± ${sig(uf,4)}
-    `);
-  } catch(e) { alert('计算出错，请检查输入（如除数不能为0）'); }
+function cProp(){
+  const k=document.getElementById('pf').value,cfg=PC[k];
+  const vals={};
+  for(const v of cfg.vars){const val=parseFloat(document.getElementById('pp-'+v.n).value);if(isNaN(val)){alert('请填写所有输入项');return;}vals[v.n]=val;}
+  try{
+    const{f,uf}=cfg.calc?cfg.calc(vals):cfg.c(vals);
+    const ur=Math.abs(uf/f)*100;
+    document.getElementById('fv').value=sf(f,6);
+    document.getElementById('fu').value=sf(uf,4);
+    show('rp',`<b>函数值 f=${sf(f,6)}</b><br><b>不确定度 u(f)=${sf(uf,4)}</b><br>相对不确定度 ur=${sf(ur,4)}%<br>结果：f=${sf(f,4)} ± ${sf(uf,4)}<br><span style="color:var(--ok)">✅ 已自动带入第⑤步</span>`);
+  }catch(e){alert('计算出错，请检查输入');}
 }
-
-// ===== 物理常数 =====
-const constants = [
+function cFin(){
+  const v=parseFloat(document.getElementById('fv').value);
+  const u=parseFloat(document.getElementById('fu').value);
+  const info=document.getElementById('fi').value.trim();
+  if(isNaN(v)||isNaN(u)){alert('请填写数值和不确定度');return;}
+  const{v:vs,u:us}=align(v,u);
+  const ur=Math.abs(u/v)*100;
+  show('rf',`有效数字对齐后：<br><span class="fl">${info?info+'：':''}${vs} ± ${us}</span><br>相对不确定度 ur=${sf(ur,3)}%<br><br><b>📋 可直接写入报告的结果：</b><br><span style="font-size:1.05rem;font-weight:700">${info||'测量值'} = (${vs} ± ${us})${info?'':''}</span>`);
+}
+// 常数表
+const CONSTS=[
   ['真空光速','c','299 792 458','m/s'],
   ['重力加速度（标准）','g','9.806 65','m/s²'],
   ['普朗克常数','h','6.626 070 15×10⁻³⁴','J·s'],
   ['元电荷','e','1.602 176 634×10⁻¹⁹','C'],
-  ['阿伏加德罗常数','N_A','6.022 140 76×10²³','mol⁻¹'],
-  ['玻尔兹曼常数','k_B','1.380 649×10⁻²³','J/K'],
+  ['阿伏加德罗常数','Nₐ','6.022 140 76×10²³','mol⁻¹'],
+  ['玻尔兹曼常数','kB','1.380 649×10⁻²³','J/K'],
   ['万有引力常数','G','6.674 30×10⁻¹¹','N·m²/kg²'],
-  ['电子质量','m_e','9.109 383 701 5×10⁻³¹','kg'],
-  ['质子质量','m_p','1.672 621 923 69×10⁻²⁷','kg'],
-  ['真空磁导率','μ₀','1.256 637 062 12×10⁻⁶','N/A²'],
-  ['真空电容率','ε₀','8.854 187 812 8×10⁻¹²','F/m'],
+  ['电子质量','mₑ','9.109 384×10⁻³¹','kg'],
+  ['质子质量','mₚ','1.672 622×10⁻²⁷','kg'],
+  ['真空电容率','ε₀','8.854 188×10⁻¹²','F/m'],
   ['摩尔气体常数','R','8.314 462 618','J/(mol·K)'],
   ['标准大气压','atm','101 325','Pa'],
-  ['电子伏特','eV','1.602 176 634×10⁻¹⁹','J'],
 ];
-
-const tbody = document.getElementById('constants-table');
-constants.forEach(([name,sym,val,unit]) => {
-  const tr = document.createElement('tr');
-  tr.innerHTML = `<td>${name}</td><td><i>${sym}</i></td><td id="cv-${sym}">${val}</td><td>${unit}</td>
-    <td><button class="copy-btn" onclick="navigator.clipboard.writeText('${val}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='复制',1000})">复制</button></td>`;
-  tbody.appendChild(tr);
+const ctb=document.getElementById('ctb');
+CONSTS.forEach(([name,sym,val,unit])=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${name}</td><td><i>${sym}</i></td><td>${val}</td><td>${unit}</td><td><button onclick="navigator.clipboard.writeText('${val}').then(()=>{this.textContent='✓';setTimeout(()=>this.textContent='复制',1200)})" style="padding:2px 7px;font-size:.75rem;background:var(--p);color:#fff;border:none;border-radius:4px;cursor:pointer">复制</button></td>`;
+  ctb.appendChild(tr);
 });
-
-// ===== 公式速查 =====
-const formulaData = {
-  mech: [
-    {name:'胡克定律', f:'F = kx', desc:'k为弹簧劲度系数，x为形变量'},
-    {name:'单摆周期', f:'T = 2π√(L/g)', desc:'L为摆长，g为重力加速度'},
-    {name:'动能定理', f:'W_合 = ΔEk = ½mv²-½mv₀²', desc:'合外力做的功等于动能变化'},
-    {name:'牛顿第二定律', f:'F = ma', desc:'合外力等于质量乘以加速度'},
-    {name:'匀变速运动', f:'v² = v₀² + 2as', desc:'末速度平方公式'},
-    {name:'转动惯量（圆盘）', f:'I = ½mR²', desc:'质量为m、半径为R的均匀圆盘'},
-    {name:'向心力', f:'F = mv²/r = mω²r', desc:'做圆周运动所需的向心力'},
-    {name:'机械波速', f:'v = λf = λ/T', desc:'波速、波长、频率的关系'},
+// 公式
+const FD={
+  mc:[
+    {n:'胡克定律',f:'F = kx',d:'k为劲度系数，x为形变量'},
+    {n:'单摆周期',f:'T = 2π√(L/g)',d:'L为摆长，g为重力加速度'},
+    {n:'动能定理',f:'W合 = ΔEk = ½mv²−½mv₀²',d:'合外力做功等于动能变化'},
+    {n:'牛顿第二定律',f:'F = ma',d:'合外力等于质量×加速度'},
+    {n:'匀变速公式',f:'v²=v₀²+2as',d:'末速度平方公式'},
+    {n:'向心力',f:'F = mv²/r = mω²r',d:'做圆周运动所需向心力'},
+    {n:'转动惯量（圆盘）',f:'I = ½mR²',d:'均匀圆盘绕中心轴'},
+    {n:'机械波速',f:'v = λf',d:'波速、波长、频率关系'},
   ],
-  elec: [
-    {name:'欧姆定律', f:'I = U/R', desc:'电流、电压、电阻的关系'},
-    {name:'电阻率', f:'R = ρL/S', desc:'ρ为电阻率，L为长度，S为截面积'},
-    {name:'惠斯通电桥平衡', f:'R₁/R₂ = R₃/R₄', desc:'电桥平衡时检流计示数为零'},
-    {name:'电容', f:'C = Q/U = ε₀S/d', desc:'平板电容器的电容'},
-    {name:'欧姆定律（交流）', f:'I = U/Z', desc:'Z为阻抗'},
-    {name:'RC充电', f:'U_C = E(1-e^(-t/RC))', desc:'时间常数τ=RC'},
-    {name:'磁场力', f:'F = qvB sinθ', desc:'运动电荷在磁场中受到的洛伦兹力'},
-    {name:'法拉第电磁感应', f:'ε = -dΦ/dt', desc:'感应电动势等于磁通量变化率'},
+  el:[
+    {n:'欧姆定律',f:'I = U/R',d:'电流、电压、电阻关系'},
+    {n:'电阻率',f:'R = ρL/S',d:'ρ电阻率，L长度，S截面积'},
+    {n:'惠斯通电桥',f:'R₁/R₂ = R₃/R₄',d:'平衡时检流计为零'},
+    {n:'RC充电',f:'Uc = E(1−e^(−t/RC))',d:'时间常数τ=RC'},
+    {n:'法拉第电磁感应',f:'ε = −dΦ/dt',d:'感应电动势=磁通量变化率'},
+    {n:'洛伦兹力',f:'F = qvB sinθ',d:'运动电荷在磁场中受力'},
+    {n:'平板电容',f:'C = ε₀S/d',d:'S极板面积，d间距'},
+    {n:'交流欧姆',f:'I = U/Z',d:'Z为阻抗'},
   ],
-  optic: [
-    {name:'斯涅尔定律', f:'n₁sinθ₁ = n₂sinθ₂', desc:'光在两介质界面折射定律'},
-    {name:'薄透镜公式', f:'1/f = 1/u + 1/v', desc:'f焦距，u物距，v像距'},
-    {name:'光栅方程', f:'d sinθ = mλ', desc:'d为光栅常数，m为衍射级次'},
-    {name:'迈克尔逊干涉', f:'Δd = Nλ/2', desc:'移动距离与条纹数的关系'},
-    {name:'布拉格方程', f:'2d sinθ = nλ', desc:'X射线晶体衍射'},
-    {name:'多普勒效应（声）', f:'f\' = f(v±v₀)/(v∓v_s)', desc:'观测者靠近取+，远离取-'},
-    {name:'驻波条件', f:'L = nλ/2', desc:'两端固定的弦的驻波条件'},
-    {name:'杨氏双缝', f:'Δy = λL/d', desc:'条纹间距，L为屏距，d为缝间距'},
+  op:[
+    {n:'折射定律',f:'n₁sinθ₁ = n₂sinθ₂',d:'光在两介质界面折射'},
+    {n:'薄透镜公式',f:'1/f = 1/u + 1/v',d:'f焦距，u物距，v像距'},
+    {n:'光栅方程',f:'d sinθ = mλ',d:'d光栅常数，m衍射级次'},
+    {n:'杨氏双缝',f:'Δy = λL/d',d:'条纹间距，L屏距，d缝间距'},
+    {n:'迈克尔逊干涉',f:'Δd = Nλ/2',d:'移动距离与条纹数关系'},
+    {n:'布拉格方程',f:'2d sinθ = nλ',d:'X射线晶体衍射'},
+    {n:'马吕斯定律',f:'I = I₀cos²θ',d:'偏振光通过偏振片'},
+    {n:'分辨本领',f:'R = λ/δλ',d:'光谱分辨率'},
   ],
-  thermo: [
-    {name:'理想气体状态方程', f:'pV = nRT', desc:'n摩尔数，R=8.314 J/(mol·K)'},
-    {name:'热力学第一定律', f:'ΔU = Q + W', desc:'内能变化=吸热+外界做功'},
-    {name:'卡诺热机效率', f:'η = 1 - T₂/T₁', desc:'T₁高温热源，T₂低温热源（开尔文）'},
-    {name:'热导率（傅里叶定律）', f:'dQ/dt = -λA(dT/dx)', desc:'λ为热导率，A为截面积'},
-    {name:'克劳修斯不等式', f:'∮dQ/T ≤ 0', desc:'热力学第二定律的数学表达'},
-    {name:'麦克斯韦速率分布', f:'v_p = √(2RT/M)', desc:'最概然速率，M为摩尔质量'},
-    {name:'平均自由程', f:'λ = 1/(√2 π d² n)', desc:'d为分子直径，n为数密度'},
-    {name:'热膨胀', f:'ΔL = αL₀ΔT', desc:'α为线膨胀系数'},
+  th:[
+    {n:'理想气体状态方程',f:'pV = nRT',d:'R=8.314 J/(mol·K)'},
+    {n:'热力学第一定律',f:'ΔU = Q + W',d:'内能变化=吸热+外界做功'},
+    {n:'卡诺效率',f:'η = 1 − T₂/T₁',d:'T₁高温T₂低温（开尔文）'},
+    {n:'热导率',f:'dQ/dt = −λA(dT/dx)',d:'λ热导率，A截面积'},
+    {n:'最概然速率',f:'vₚ = √(2RT/M)',d:'M为摩尔质量'},
+    {n:'平均自由程',f:'λ = 1/(√2πd²n)',d:'d分子直径，n数密度'},
+    {n:'线热膨胀',f:'ΔL = αL₀ΔT',d:'α为线膨胀系数'},
+    {n:'克拉珀龙方程',f:'pV = nRT',d:'理想气体各参量关系'},
   ]
 };
-
-Object.entries(formulaData).forEach(([key, items]) => {
-  const div = document.getElementById('tab-'+key);
-  const grid = document.createElement('div'); grid.className='formula-grid';
-  items.forEach(item => {
-    const d = document.createElement('div'); d.className='formula-item';
-    d.innerHTML = `<div class="fname">${item.name}</div><div style="font-family:monospace;margin:6px 0;font-size:1rem">${item.f}</div><div class="fdesc">${item.desc}</div>`;
-    grid.appendChild(d);
+Object.entries(FD).forEach(([k,items])=>{
+  const div=document.getElementById('t'+k);
+  const g=document.createElement('div');g.className='fgrid';
+  items.forEach(item=>{
+    const d=document.createElement('div');d.className='fi';
+    d.innerHTML=`<div class="fn">${item.n}</div><div class="fe">${item.f}</div><div class="fd">${item.d}</div>`;
+    g.appendChild(d);
   });
-  div.appendChild(grid);
+  div.appendChild(g);
 });
-
-function switchTab(name, btn) {
-  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  btn.classList.add('active');
-}
-
-// 初始化误差传递输入
-updatePropFormula();
+function swT(n,el){document.querySelectorAll('.tc').forEach(t=>t.classList.remove('on'));document.querySelectorAll('.tb').forEach(t=>t.classList.remove('on'));document.getElementById('t'+n).classList.add('on');el.classList.add('on');}
+upProp();
 </script>
 </body>
 </html>
